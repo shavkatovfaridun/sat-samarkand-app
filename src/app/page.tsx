@@ -152,8 +152,8 @@ export default function AuthPage() {
             <div className="space-y-3">
               {[
                 ['1', 'Tap the button above'],
-                ['2', 'Telegram opens automatically'],
-                ['3', 'Send /start — you\'re in'],
+                ['2', 'Tap Start in the Telegram bot'],
+                ['3', 'Tap Open SAT Samarkand — done!'],
               ].map(([n, t]) => (
                 <div key={n} className="flex items-center gap-3">
                   <span className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0"
@@ -181,8 +181,8 @@ export default function AuthPage() {
           style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.20)' }}>
           <div className="w-8 h-8 border-[3px] border-white border-t-transparent rounded-full animate-spin" />
         </div>
-        <h2 className="text-2xl font-bold text-white mb-2">Waiting for Telegram</h2>
-        <p className="text-white/50 text-[14px] mb-8">Confirm in Telegram, then come back here</p>
+        <h2 className="text-2xl font-bold text-white mb-2">Confirm in Telegram</h2>
+        <p className="text-white/50 text-[14px] mb-8">Tap <b className="text-white/80">Start</b> in the bot — then tap <b className="text-white/80">Open SAT Samarkand</b></p>
 
         <div style={{ background: 'rgba(255,255,255,0.12)', borderRadius: '20px', padding: '20px' }} className="mb-4">
           <a href={botLink} className="text-white font-semibold text-[14px] underline underline-offset-2 opacity-80">

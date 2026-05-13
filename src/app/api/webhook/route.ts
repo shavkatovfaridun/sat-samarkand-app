@@ -49,7 +49,19 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true })
       }
 
-      await sendTelegramMessage(chatId, `✅ You're logged in!\n\nSwitch back to your browser — you'll be redirected automatically.`)
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://sat-samarkand-app.vercel.app'
+
+      await sendTelegramMessage(
+        chatId,
+        `✅ <b>You're logged in!</b>\n\nTap the button below to open the app.`,
+        {
+          reply_markup: {
+            inline_keyboard: [[
+              { text: '🚀 Open SAT Samarkand', web_app: { url: appUrl } },
+            ]],
+          },
+        },
+      )
       return NextResponse.json({ ok: true })
     }
 
