@@ -6,6 +6,7 @@ const nav = [
   { href: '/admin/groups', label: 'Groups' },
   { href: '/admin/leads', label: 'Leads' },
   { href: '/admin/finance', label: 'Finance' },
+  { href: '/admin/notifications', label: '📤 Notify' },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
