@@ -2,21 +2,23 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { formatDate } from '@/lib/format'
 
-const STAGE_ORDER = ['NEW', 'NO_ANSWER', 'CONTACTED', 'NURTURE', 'TRIAL_SCHEDULED', 'TRIAL_DONE', 'ENROLLED', 'LOST']
-const STAGE_STYLES: Record<string, string> = {
-  NEW: 'bg-[#EEF3FF] text-[#1B4FD8]',
-  NO_ANSWER: 'bg-[#F1F5F9] text-slate-500',
-  CONTACTED: 'bg-[#F5F3FF] text-violet-700',
-  NURTURE: 'bg-[#FFFBEB] text-amber-700',
-  TRIAL_SCHEDULED: 'bg-[#FFF7ED] text-orange-700',
-  TRIAL_DONE: 'bg-[#EEF3FF] text-indigo-700',
-  ENROLLED: 'bg-[#ECFDF5] text-emerald-700',
-  LOST: 'bg-[#FEF2F2] text-red-600',
+const STAGE_ORDER = ['NEW','NO_ANSWER','CONTACTED','NURTURE','TRIAL_SCHEDULED','TRIAL_DONE','ENROLLED','LOST']
+
+const STAGE: Record<string, { color: string; bg: string; label: string }> = {
+  NEW:              { color: '#1B4FD8', bg: 'rgba(27,79,216,0.12)',    label: 'New'             },
+  NO_ANSWER:        { color: 'rgba(60,60,67,0.50)', bg: 'rgba(120,120,128,0.12)', label: 'No Answer' },
+  CONTACTED:        { color: '#AF52DE', bg: 'rgba(175,82,222,0.12)',   label: 'Contacted'       },
+  NURTURE:          { color: '#B86800', bg: 'rgba(255,149,0,0.12)',    label: 'Nurture'         },
+  TRIAL_SCHEDULED:  { color: '#B86800', bg: 'rgba(255,149,0,0.12)',    label: 'Trial Scheduled' },
+  TRIAL_DONE:       { color: '#1B4FD8', bg: 'rgba(27,79,216,0.10)',    label: 'Trial Done'      },
+  ENROLLED:         { color: '#1E8A3C', bg: 'rgba(52,199,89,0.12)',    label: 'Enrolled'        },
+  LOST:             { color: '#C0281F', bg: 'rgba(255,59,48,0.12)',    label: 'Lost'            },
 }
-const TEMP_DOTS: Record<string, string> = {
-  HOT: 'text-red-500',
-  WARM: 'text-orange-400',
-  COLD: 'text-[#1B4FD8]',
+
+const TEMP: Record<string, { color: string; label: string }> = {
+  HOT:  { color: '#FF3B30', label: '🔥' },
+  WARM: { color: '#FF9500', label: '♨️' },
+  COLD: { color: '#1B4FD8', label: '❄️' },
 }
 
 export default async function LeadsPage({ searchParams }: { searchParams: { stage?: string } }) {
@@ -24,100 +26,148 @@ export default async function LeadsPage({ searchParams }: { searchParams: { stag
 
   let query = supabase
     .from('leads')
-    .select('id, name, phone, stage, temperature, source, current_score, target_score, created_at, updated_at')
+    .select('id, name, phone, stage, temperature, source, current_score, target_score, updated_at')
     .order('updated_at', { ascending: false })
 
   if (searchParams.stage) query = query.eq('stage', searchParams.stage)
 
   const { data: leads } = await query
+  const { data: allLeads } = await supabase.from('leads').select('stage, temperature')
 
-  const { data: stageCounts } = await supabase.from('leads').select('stage')
   const countByStage = Object.fromEntries(
-    STAGE_ORDER.map((s) => [s, stageCounts?.filter((l) => l.stage === s).length ?? 0])
+    STAGE_ORDER.map(s => [s, allLeads?.filter(l => l.stage === s).length ?? 0])
   )
+  const hot  = allLeads?.filter(l => l.temperature === 'HOT').length ?? 0
+  const enrolled = allLeads?.filter(l => l.stage === 'ENROLLED').length ?? 0
+  const total = allLeads?.length ?? 0
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
+    <div className="max-w-3xl">
+      {/* Header */}
+      <div className="flex items-end justify-between mb-6">
         <div>
-          <p className="text-[#6B7B9C] text-xs font-medium uppercase tracking-wide mb-1">CRM</p>
-          <h1 className="text-2xl font-bold text-[#1A2340]">Leads Pipeline</h1>
+          <p className="text-[13px] font-medium mb-0.5" style={{ color: 'rgba(60,60,67,0.55)' }}>CRM</p>
+          <h1 className="text-[28px] font-bold tracking-tight" style={{ color: '#1C1C1E' }}>Pipeline</h1>
         </div>
-        <Link
-          href="/admin/leads/new"
-          className="bg-[#1B4FD8] text-white px-4 py-2.5 rounded-xl text-sm font-semibold active:scale-95 transition-transform"
-        >
-          + Add
+        <Link href="/admin/leads/new"
+          className="flex items-center gap-1.5 text-[13px] font-semibold px-4 py-2.5 rounded-xl text-white transition-all active:scale-[0.97]"
+          style={{ background: '#1B4FD8' }}>
+          <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+            <path fillRule="evenodd" d="M12 3.75a.75.75 0 01.75.75v6.75h6.75a.75.75 0 010 1.5h-6.75v6.75a.75.75 0 01-1.5 0v-6.75H4.5a.75.75 0 010-1.5h6.75V4.5a.75.75 0 01.75-.75z" clipRule="evenodd" />
+          </svg>
+          New Lead
         </Link>
       </div>
 
-      {/* Pipeline filter chips */}
-      <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
-        <Link
-          href="/admin/leads"
-          className={`shrink-0 px-4 py-2 rounded-full text-xs font-semibold border transition-colors ${
-            !searchParams.stage
-              ? 'bg-[#1B4FD8] text-white border-[#1B4FD8]'
-              : 'bg-white text-[#6B7B9C] border-[#E2E8F5]'
-          }`}
-        >
-          All ({leads?.length ?? 0})
-        </Link>
-        {STAGE_ORDER.map((stage) => (
-          <Link
-            key={stage}
-            href={`/admin/leads?stage=${stage}`}
-            className={`shrink-0 px-4 py-2 rounded-full text-xs font-semibold border transition-colors ${
-              searchParams.stage === stage
-                ? 'bg-[#1B4FD8] text-white border-[#1B4FD8]'
-                : 'bg-white text-[#6B7B9C] border-[#E2E8F5]'
-            }`}
-          >
-            {stage.replace(/_/g, ' ')} ({countByStage[stage] ?? 0})
-          </Link>
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-2.5 mb-5">
+        {[
+          { label: 'Total Leads', value: total,    color: '#1C1C1E', bg: 'rgba(120,120,128,0.08)' },
+          { label: 'Hot Leads',   value: hot,      color: '#FF3B30', bg: 'rgba(255,59,48,0.10)'  },
+          { label: 'Enrolled',    value: enrolled, color: '#1E8A3C', bg: 'rgba(52,199,89,0.10)'  },
+        ].map(s => (
+          <div key={s.label} className="bg-white rounded-2xl p-4" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+            <p className="text-[26px] font-bold tracking-tight leading-none mb-1" style={{ color: s.color }}>{s.value}</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'rgba(60,60,67,0.45)' }}>{s.label}</p>
+          </div>
         ))}
       </div>
 
-      <div className="space-y-2">
-        {!leads?.length ? (
-          <div className="bg-white rounded-2xl p-8 text-center border border-[#E2E8F5]">
-            <p className="text-3xl mb-2">📊</p>
-            <p className="text-[#6B7B9C] text-sm">No leads found</p>
-          </div>
-        ) : (
-          leads.map((lead) => (
-            <Link
-              key={lead.id}
-              href={`/admin/leads/${lead.id}`}
-              className="flex items-start justify-between bg-white rounded-2xl px-4 py-3.5 border border-[#E2E8F5] hover:border-[#C7D7FA] active:scale-[0.99] transition-all gap-3"
-            >
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  {lead.temperature && (
-                    <span className={`text-xs ${TEMP_DOTS[lead.temperature] ?? ''}`}>●</span>
-                  )}
-                  <p className="font-semibold text-[#1A2340] truncate">{lead.name}</p>
-                </div>
-                <p className="text-xs text-[#6B7B9C]">
-                  {lead.phone ?? '—'} · {lead.source ?? '—'}
-                </p>
-                {(lead.current_score || lead.target_score) && (
-                  <p className="text-xs text-[#6B7B9C]">
-                    Score: {lead.current_score ?? '—'} → {lead.target_score ?? '—'}
-                  </p>
-                )}
-                <p className="text-xs text-[#6B7B9C]/60 mt-1">{formatDate(lead.updated_at)}</p>
-              </div>
-              <div className="flex flex-col items-end gap-2 shrink-0">
-                <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${STAGE_STYLES[lead.stage] ?? 'bg-[#F1F5F9] text-slate-500'}`}>
-                  {lead.stage?.replace(/_/g, ' ')}
-                </span>
-                <span className="text-[#6B7B9C] text-sm">›</span>
-              </div>
+      {/* Stage filter chips */}
+      <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
+        <Link href="/admin/leads"
+          className="shrink-0 text-[12px] font-semibold px-4 py-2 rounded-full transition-all"
+          style={{
+            background: !searchParams.stage ? '#1B4FD8' : 'white',
+            color: !searchParams.stage ? 'white' : 'rgba(60,60,67,0.55)',
+            boxShadow: !searchParams.stage ? '0 2px 8px rgba(27,79,216,0.25)' : '0 1px 4px rgba(0,0,0,0.05)',
+          }}>
+          All ({total})
+        </Link>
+        {STAGE_ORDER.map(stage => {
+          const active = searchParams.stage === stage
+          const st = STAGE[stage]
+          return (
+            <Link key={stage} href={`/admin/leads?stage=${stage}`}
+              className="shrink-0 text-[12px] font-semibold px-4 py-2 rounded-full transition-all whitespace-nowrap"
+              style={{
+                background: active ? st.color : 'white',
+                color: active ? 'white' : 'rgba(60,60,67,0.55)',
+                boxShadow: active ? `0 2px 8px ${st.color}40` : '0 1px 4px rgba(0,0,0,0.05)',
+              }}>
+              {st.label} {countByStage[stage] > 0 ? `(${countByStage[stage]})` : ''}
             </Link>
-          ))
-        )}
+          )
+        })}
       </div>
+
+      {/* List */}
+      {!leads?.length ? (
+        <div className="bg-white rounded-3xl p-10 text-center" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+          <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center"
+            style={{ background: 'rgba(255,149,0,0.10)' }}>
+            <svg viewBox="0 0 24 24" fill="currentColor" className="w-7 h-7" style={{ color: '#FF9500' }}>
+              <path fillRule="evenodd" d="M2.25 2.25a.75.75 0 000 1.5H3v10.5a3 3 0 003 3h1.21l-1.172 3.513a.75.75 0 001.424.474l.329-.987h8.418l.33.987a.75.75 0 001.422-.474l-1.17-3.513H18a3 3 0 003-3V3.75h.75a.75.75 0 000-1.5H2.25z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <p className="font-bold text-[#1C1C1E] text-[16px] mb-1">No leads found</p>
+          <p className="text-[13px]" style={{ color: 'rgba(60,60,67,0.50)' }}>
+            {searchParams.stage ? `No leads in ${STAGE[searchParams.stage]?.label ?? searchParams.stage}` : 'Start adding leads to your pipeline'}
+          </p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-2xl overflow-hidden" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04)' }}>
+          {leads.map((lead, i) => {
+            const st = STAGE[lead.stage] ?? STAGE.NO_ANSWER
+            const temp = lead.temperature ? TEMP[lead.temperature] : null
+            return (
+              <Link key={lead.id} href={`/admin/leads/${lead.id}`}
+                className="flex items-center gap-4 px-4 py-3.5 transition-all hover:bg-[rgba(0,0,0,0.02)] active:bg-[rgba(0,0,0,0.04)]"
+                style={{ borderTop: i > 0 ? '1px solid rgba(60,60,67,0.07)' : 'none' }}>
+                {/* Avatar */}
+                <div className="w-10 h-10 rounded-2xl shrink-0 flex items-center justify-center text-[15px] font-bold relative"
+                  style={{ background: st.bg, color: st.color }}>
+                  {lead.name.charAt(0).toUpperCase()}
+                  {temp && (
+                    <span className="absolute -top-1 -right-1 text-[10px] leading-none">{temp.label}</span>
+                  )}
+                </div>
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-[14px] font-semibold text-[#1C1C1E] truncate">{lead.name}</p>
+                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                    <p className="text-[12px]" style={{ color: 'rgba(60,60,67,0.50)' }}>
+                      {lead.phone ?? '—'}
+                    </p>
+                    {lead.source && (
+                      <span className="text-[11px] capitalize" style={{ color: 'rgba(60,60,67,0.35)' }}>· {lead.source}</span>
+                    )}
+                    {(lead.current_score || lead.target_score) && (
+                      <span className="text-[11px]" style={{ color: 'rgba(60,60,67,0.35)' }}>
+                        · {lead.current_score ?? '?'} → {lead.target_score ?? '?'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {/* Stage + time */}
+                <div className="flex flex-col items-end gap-1.5 shrink-0">
+                  <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap"
+                    style={{ background: st.bg, color: st.color }}>
+                    {st.label}
+                  </span>
+                  <span className="text-[10px]" style={{ color: 'rgba(60,60,67,0.35)' }}>
+                    {formatDate(lead.updated_at)}
+                  </span>
+                </div>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 shrink-0"
+                  style={{ color: 'rgba(60,60,67,0.22)' }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                </svg>
+              </Link>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
