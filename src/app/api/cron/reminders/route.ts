@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendTelegramMessage } from '@/lib/bot'
+import { formatUZS } from '@/lib/format'
 
 // Called daily by Vercel Cron — see vercel.json
 // Sends payment reminders: 5 days before due, on due date, 3 days overdue
@@ -46,7 +47,6 @@ export async function GET(req: NextRequest) {
 
     if (!student) continue
 
-    const { formatUZS } = await import('@/lib/format')
     const amount = formatUZS(p.net_amount)
 
     let msg: string | null = null
