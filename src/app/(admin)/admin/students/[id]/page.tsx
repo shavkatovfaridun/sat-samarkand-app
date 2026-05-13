@@ -3,11 +3,19 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { formatUZS, formatDate, daysUntil } from '@/lib/format'
 
-const STATUS_STYLES: Record<string, string> = {
-  active: 'bg-[#ECFDF5] text-emerald-700',
-  paused: 'bg-[#FFFBEB] text-amber-700',
-  graduated: 'bg-[#EEF3FF] text-[#1B4FD8]',
-  dropped: 'bg-[#F1F5F9] text-slate-500',
+const STATUS: Record<string, { bg: string; color: string }> = {
+  active:    { bg: 'rgba(52,199,89,0.12)',   color: '#1E8A3C' },
+  paused:    { bg: 'rgba(255,149,0,0.12)',   color: '#B86800' },
+  graduated: { bg: 'rgba(27,79,216,0.10)',   color: '#1B4FD8' },
+  dropped:   { bg: 'rgba(120,120,128,0.10)', color: 'rgba(60,60,67,0.55)' },
+}
+
+const PAY_STATUS: Record<string, { bg: string; color: string; label: string }> = {
+  paid:    { bg: 'rgba(52,199,89,0.12)',  color: '#1E8A3C', label: 'Paid'    },
+  unpaid:  { bg: 'rgba(255,149,0,0.12)', color: '#B86800', label: 'Unpaid'  },
+  overdue: { bg: 'rgba(255,59,48,0.12)', color: '#C0281F', label: 'Overdue' },
+  partial: { bg: 'rgba(255,149,0,0.12)', color: '#B86800', label: 'Partial' },
+  frozen:  { bg: 'rgba(120,120,128,0.10)', color: 'rgba(60,60,67,0.50)', label: 'Frozen' },
 }
 
 async function updateStatus(studentId: string, formData: FormData) {
@@ -20,21 +28,26 @@ async function updateStatus(studentId: string, formData: FormData) {
 async function addScore(studentId: string, formData: FormData) {
   'use server'
   const admin = createAdminClient()
-  const math = formData.get('math_score') ? parseInt(formData.get('math_score') as string) : null
+  const math    = formData.get('math_score')    ? parseInt(formData.get('math_score')    as string) : null
   const reading = formData.get('reading_score') ? parseInt(formData.get('reading_score') as string) : null
-  const total = parseInt(formData.get('total_score') as string)
+  const total   = parseInt(formData.get('total_score') as string)
   await admin.from('score_history').insert({
-    student_id: studentId,
-    test_date: formData.get('test_date') as string,
-    math_score: math,
+    student_id:    studentId,
+    test_date:     formData.get('test_date') as string,
+    math_score:    math,
     reading_score: reading,
-    total_score: total,
-    test_type: formData.get('test_type') as string,
-    notes: formData.get('notes') as string || null,
+    total_score:   total,
+    test_type:     formData.get('test_type') as string,
+    notes:         (formData.get('notes') as string) || null,
   })
   await admin.from('students').update({ current_score: total }).eq('id', studentId)
   redirect(`/admin/students/${studentId}`)
 }
+
+const INPUT = 'w-full rounded-xl px-3 py-2.5 text-[14px] bg-white'
+const INPUT_STYLE = { border: '1px solid rgba(60,60,67,0.15)', color: '#1C1C1E' }
+const LABEL = 'block text-[12px] font-semibold mb-1.5'
+const LABEL_STYLE = { color: 'rgba(60,60,67,0.55)' }
 
 export default async function StudentDetailPage({ params }: { params: { id: string } }) {
   const admin = createAdminClient()
@@ -48,152 +61,204 @@ export default async function StudentDetailPage({ params }: { params: { id: stri
   ])
 
   const updateStatusWithId = updateStatus.bind(null, params.id)
-  const addScoreWithId = addScore.bind(null, params.id)
+  const addScoreWithId     = addScore.bind(null, params.id)
   const examDays = student.exam_date ? daysUntil(student.exam_date) : null
-  const today = new Date().toISOString().slice(0, 10)
+  const today    = new Date().toISOString().slice(0, 10)
+  const st       = STATUS[student.status] ?? STATUS.active
+  const scoreGap = student.target_score && student.current_score ? student.target_score - student.current_score : null
+  const progressPct = student.current_score && student.target_score
+    ? Math.min(100, Math.round(((student.current_score - 400) / (student.target_score - 400)) * 100)) : 0
 
   return (
-    <div className="max-w-2xl">
-      <div className="flex items-center gap-3 mb-6">
-        <Link href="/admin/students" className="text-[#6B7B9C] hover:text-[#1A2340] text-sm">← Students</Link>
-        <span className="text-[#E2E8F5]">/</span>
-        <span className="text-sm font-semibold text-[#1A2340] truncate">{student.name}</span>
-      </div>
-
-      {/* Header */}
-      <div className="bg-white rounded-2xl p-5 border border-[#E2E8F5] mb-4">
-        <div className="flex items-start justify-between gap-3 mb-4">
+    <div className="max-w-2xl space-y-4">
+      {/* Back */}
+      <div className="pt-1">
+        <Link href="/admin/students"
+          className="inline-flex items-center gap-1 text-[13px] font-medium mb-3"
+          style={{ color: '#1B4FD8' }}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+          </svg>
+          Students
+        </Link>
+        <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-xl font-bold text-[#1A2340]">{student.name}</h1>
-            <p className="text-[#6B7B9C] text-sm capitalize mt-0.5">{student.subject} · {student.type} · {student.phase}</p>
+            <h1 className="text-[24px] font-bold tracking-tight" style={{ color: '#1C1C1E' }}>{student.name}</h1>
+            <p className="text-[13px] mt-0.5 capitalize" style={{ color: 'rgba(60,60,67,0.55)' }}>
+              {student.subject} · {student.type} · {student.phase}
+            </p>
           </div>
-          <span className={`shrink-0 text-xs px-2.5 py-1 rounded-full font-medium ${STATUS_STYLES[student.status] ?? ''}`}>
+          <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full capitalize shrink-0 mt-1"
+            style={{ background: st.bg, color: st.color }}>
             {student.status}
           </span>
         </div>
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-[#F5F7FF] rounded-xl p-3 text-center">
-            <p className="text-xl font-bold text-[#1A2340]">{student.current_score ?? '—'}</p>
-            <p className="text-[10px] text-[#6B7B9C] mt-0.5">Current</p>
+      </div>
+
+      {/* Score hero */}
+      <div className="rounded-3xl overflow-hidden"
+        style={{ background: 'linear-gradient(135deg,#1340B0 0%,#1B4FD8 60%,#2563EB 100%)', boxShadow: '0 8px 32px rgba(27,79,216,0.25)' }}>
+        <div className="relative overflow-hidden p-5">
+          <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }} />
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            {[
+              { label: 'Current', value: student.current_score ?? '—', big: true },
+              { label: 'Target',  value: student.target_score  ?? '—', big: false },
+              { label: 'Days left', value: examDays ?? '—', big: false },
+            ].map(s => (
+              <div key={s.label} className="text-center">
+                <p className={`font-bold text-white leading-none ${s.big ? 'text-[40px]' : 'text-[28px]'}`}
+                  style={{ opacity: s.big ? 1 : 0.75 }}>{s.value}</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.06em] mt-1" style={{ color: 'rgba(255,255,255,0.45)' }}>{s.label}</p>
+              </div>
+            ))}
           </div>
-          <div className="bg-[#EEF3FF] rounded-xl p-3 text-center">
-            <p className="text-xl font-bold text-[#1B4FD8]">{student.target_score ?? '—'}</p>
-            <p className="text-[10px] text-[#6B7B9C] mt-0.5">Target</p>
-          </div>
-          <div className="bg-[#F5F7FF] rounded-xl p-3 text-center">
-            <p className="text-xl font-bold text-[#1A2340]">{examDays ?? '—'}</p>
-            <p className="text-[10px] text-[#6B7B9C] mt-0.5">Days left</p>
-          </div>
+          {student.current_score && student.target_score && (
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                {scoreGap && scoreGap > 0
+                  ? <p className="text-[12px] font-medium" style={{ color: 'rgba(255,255,255,0.50)' }}>+{scoreGap} to target</p>
+                  : <p className="text-[12px] font-medium" style={{ color: 'rgba(255,255,255,0.50)' }}>Target reached!</p>}
+                <p className="text-[12px] font-bold" style={{ color: 'rgba(255,255,255,0.70)' }}>{progressPct}%</p>
+              </div>
+              <div className="w-full rounded-full h-1.5" style={{ background: 'rgba(255,255,255,0.15)' }}>
+                <div className="h-1.5 rounded-full" style={{ width: `${progressPct}%`, background: 'rgba(255,255,255,0.70)' }} />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Info */}
-      <div className="bg-white rounded-2xl p-5 border border-[#E2E8F5] mb-4">
-        <p className="text-xs font-semibold text-[#6B7B9C] uppercase tracking-wide mb-3">Student Info</p>
-        <dl className="space-y-2 text-sm">
-          {[
-            ['Telegram ID', student.telegram_id?.toString() ?? '—'],
-            ['Enrolled', student.enrollment_date ? formatDate(student.enrollment_date) : '—'],
-            ['Exam Date', student.exam_date ? formatDate(student.exam_date) : '—'],
-            ['Fee (Math)', student.monthly_fee_math ? formatUZS(student.monthly_fee_math) : '—'],
-            ['Fee (English)', student.monthly_fee_english ? formatUZS(student.monthly_fee_english) : '—'],
-            ['Parent TG', student.parent_telegram_id?.toString() ?? '—'],
-          ].map(([label, value]) => (
-            <div key={label} className="flex justify-between gap-4">
-              <dt className="text-[#6B7B9C] shrink-0">{label}</dt>
-              <dd className="text-[#1A2340] text-right truncate">{value}</dd>
-            </div>
-          ))}
-          {student.notes && (
-            <div className="mt-2 bg-[#FFFBEB] rounded-xl p-3">
-              <p className="text-xs text-amber-700">{student.notes}</p>
-            </div>
-          )}
-        </dl>
-        <div className="flex gap-2 mt-4">
-          <Link href={`/admin/students/${params.id}/edit`}
-            className="flex-1 text-center py-2.5 bg-[#EEF3FF] text-[#1B4FD8] rounded-xl text-sm font-semibold">
-            Edit
-          </Link>
-          <Link href={`/admin/finance/new?student_id=${student.id}`}
-            className="flex-1 text-center py-2.5 bg-[#ECFDF5] text-emerald-700 rounded-xl text-sm font-semibold">
-            + Payment
-          </Link>
+      {/* Action buttons */}
+      <div className="grid grid-cols-2 gap-2.5">
+        <Link href={`/admin/students/${params.id}/edit`}
+          className="flex items-center justify-center gap-2 py-3 rounded-2xl text-[14px] font-semibold transition-all active:scale-[0.98]"
+          style={{ background: 'rgba(27,79,216,0.08)', color: '#1B4FD8' }}>
+          <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+            <path d="M21.731 2.269a2.625 2.625 0 00-3.712 0l-1.157 1.157 3.712 3.712 1.157-1.157a2.625 2.625 0 000-3.712zM19.513 8.199l-3.712-3.712-12.15 12.15a5.25 5.25 0 00-1.32 2.214l-.8 2.685a.75.75 0 00.933.933l2.685-.8a5.25 5.25 0 002.214-1.32L19.513 8.2z" />
+          </svg>
+          Edit Profile
+        </Link>
+        <Link href={`/admin/finance/new?student_id=${student.id}`}
+          className="flex items-center justify-center gap-2 py-3 rounded-2xl text-[14px] font-semibold transition-all active:scale-[0.98]"
+          style={{ background: 'rgba(52,199,89,0.10)', color: '#1E8A3C' }}>
+          <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+            <path fillRule="evenodd" d="M12 3.75a.75.75 0 01.75.75v6.75h6.75a.75.75 0 010 1.5h-6.75v6.75a.75.75 0 01-1.5 0v-6.75H4.5a.75.75 0 010-1.5h6.75V4.5a.75.75 0 01.75-.75z" clipRule="evenodd" />
+          </svg>
+          Add Payment
+        </Link>
+      </div>
+
+      {/* Info table */}
+      <div className="bg-white rounded-2xl overflow-hidden" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04)' }}>
+        <div className="px-4 pt-4 pb-2">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.06em]" style={{ color: 'rgba(60,60,67,0.45)' }}>
+            Student Info
+          </p>
         </div>
+        {[
+          ['Telegram ID',   student.telegram_id?.toString()        ?? '—'],
+          ['Parent TG',     student.parent_telegram_id?.toString() ?? '—'],
+          ['Enrolled',      student.enrollment_date ? formatDate(student.enrollment_date) : '—'],
+          ['Exam Date',     student.exam_date ? formatDate(student.exam_date) : '—'],
+          ['Fee (Math)',    student.monthly_fee_math    ? formatUZS(student.monthly_fee_math)    : '—'],
+          ['Fee (English)', student.monthly_fee_english ? formatUZS(student.monthly_fee_english) : '—'],
+        ].map(([label, value], i) => (
+          <div key={label} className="flex items-center justify-between px-4 py-3"
+            style={{ borderTop: i === 0 ? '1px solid rgba(60,60,67,0.07)' : '1px solid rgba(60,60,67,0.07)' }}>
+            <p className="text-[13px]" style={{ color: 'rgba(60,60,67,0.50)' }}>{label}</p>
+            <p className="text-[13px] font-medium" style={{ color: '#1C1C1E' }}>{value}</p>
+          </div>
+        ))}
+        {student.notes && (
+          <div className="mx-4 mb-4 mt-1 px-3 py-2.5 rounded-xl" style={{ background: 'rgba(255,149,0,0.08)' }}>
+            <p className="text-[12px]" style={{ color: '#B86800' }}>{student.notes}</p>
+          </div>
+        )}
       </div>
 
       {/* Change status */}
-      <form action={updateStatusWithId} className="bg-white rounded-2xl p-5 border border-[#E2E8F5] mb-4">
-        <p className="text-xs font-semibold text-[#6B7B9C] uppercase tracking-wide mb-3">Change Status</p>
-        <div className="flex gap-2">
+      <div className="bg-white rounded-2xl p-5" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.06em] mb-3" style={{ color: 'rgba(60,60,67,0.45)' }}>
+          Change Status
+        </p>
+        <form action={updateStatusWithId} className="flex gap-2">
           <select name="status" defaultValue={student.status}
-            className="flex-1 border border-[#E2E8F5] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-[#1B4FD8] bg-white">
-            {['active', 'paused', 'graduated', 'dropped'].map(s => <option key={s} value={s}>{s}</option>)}
+            className={`flex-1 ${INPUT}`} style={INPUT_STYLE}>
+            {['active', 'paused', 'graduated', 'dropped'].map(s => (
+              <option key={s} value={s} className="capitalize">{s}</option>
+            ))}
           </select>
           <button type="submit"
-            className="px-5 py-2.5 bg-[#1B4FD8] text-white rounded-xl text-sm font-semibold active:scale-95 transition-transform">
+            className="px-5 rounded-xl text-[14px] font-semibold text-white transition-all active:scale-[0.98]"
+            style={{ background: '#1B4FD8' }}>
             Save
           </button>
-        </div>
-      </form>
+        </form>
+      </div>
 
-      {/* Add score */}
-      <div className="bg-white rounded-2xl p-5 border border-[#E2E8F5] mb-4">
-        <p className="text-xs font-semibold text-[#6B7B9C] uppercase tracking-wide mb-3">Log Score</p>
+      {/* Log score */}
+      <div className="bg-white rounded-2xl p-5" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.06em] mb-4" style={{ color: 'rgba(60,60,67,0.45)' }}>
+          Log SAT Score
+        </p>
         <form action={addScoreWithId} className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-[#6B7B9C] mb-1">Test Date</label>
-              <input name="test_date" type="date" required defaultValue={today}
-                className="w-full border border-[#E2E8F5] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B4FD8]" />
+              <label className={LABEL} style={LABEL_STYLE}>Test Date</label>
+              <input name="test_date" type="date" required defaultValue={today} className={INPUT} style={INPUT_STYLE} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-[#6B7B9C] mb-1">Type</label>
-              <select name="test_type" className="w-full border border-[#E2E8F5] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B4FD8] bg-white">
+              <label className={LABEL} style={LABEL_STYLE}>Type</label>
+              <select name="test_type" className={INPUT} style={INPUT_STYLE}>
                 <option value="practice">Practice</option>
                 <option value="diagnostic">Diagnostic</option>
                 <option value="official">Official</option>
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-[#6B7B9C] mb-1">Math (200–800)</label>
-              <input name="math_score" type="number" min="200" max="800" placeholder="e.g. 650"
-                className="w-full border border-[#E2E8F5] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B4FD8]" />
+              <label className={LABEL} style={LABEL_STYLE}>Math (200–800)</label>
+              <input name="math_score" type="number" min="200" max="800" placeholder="e.g. 650" className={INPUT} style={INPUT_STYLE} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-[#6B7B9C] mb-1">R&W (200–800)</label>
-              <input name="reading_score" type="number" min="200" max="800" placeholder="e.g. 620"
-                className="w-full border border-[#E2E8F5] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B4FD8]" />
+              <label className={LABEL} style={LABEL_STYLE}>R&W (200–800)</label>
+              <input name="reading_score" type="number" min="200" max="800" placeholder="e.g. 620" className={INPUT} style={INPUT_STYLE} />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#6B7B9C] mb-1">Total Score * (400–1600)</label>
-            <input name="total_score" type="number" required min="400" max="1600" placeholder="e.g. 1270"
-              className="w-full border border-[#E2E8F5] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B4FD8]" />
+            <label className={LABEL} style={LABEL_STYLE}>Total Score * (400–1600)</label>
+            <input name="total_score" type="number" required min="400" max="1600" placeholder="e.g. 1270" className={INPUT} style={INPUT_STYLE} />
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#6B7B9C] mb-1">Notes</label>
-            <input name="notes" placeholder="Optional"
-              className="w-full border border-[#E2E8F5] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1B4FD8]" />
+            <label className={LABEL} style={LABEL_STYLE}>Notes</label>
+            <input name="notes" placeholder="Optional" className={INPUT} style={INPUT_STYLE} />
           </div>
           <button type="submit"
-            className="w-full bg-[#1B4FD8] text-white rounded-xl py-2.5 text-sm font-bold active:scale-95 transition-transform">
+            className="w-full rounded-xl py-3 text-[14px] font-bold text-white transition-all active:scale-[0.98]"
+            style={{ background: '#1B4FD8' }}>
             Save Score
           </button>
         </form>
 
+        {/* Score history */}
         {scoreHistory && scoreHistory.length > 0 && (
           <div className="mt-4 space-y-2">
-            <p className="text-xs font-medium text-[#6B7B9C]">History</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.06em]" style={{ color: 'rgba(60,60,67,0.45)' }}>History</p>
             {scoreHistory.map((s, i) => (
-              <div key={s.id} className={`flex items-center justify-between rounded-xl px-3 py-2 ${i === 0 ? 'bg-[#EEF3FF]' : 'bg-[#F5F7FF]'}`}>
+              <div key={s.id}
+                className="flex items-center justify-between px-3 py-2.5 rounded-xl"
+                style={{ background: i === 0 ? 'rgba(27,79,216,0.07)' : 'rgba(120,120,128,0.05)' }}>
                 <div>
-                  <p className="font-bold text-[#1A2340]">{s.total_score}</p>
-                  <p className="text-xs text-[#6B7B9C]">{s.test_type} · {formatDate(s.test_date)}</p>
+                  <p className="text-[15px] font-bold" style={{ color: i === 0 ? '#1B4FD8' : '#1C1C1E' }}>{s.total_score}</p>
+                  <p className="text-[11px] capitalize" style={{ color: 'rgba(60,60,67,0.50)' }}>
+                    {s.test_type} · {formatDate(s.test_date)}
+                  </p>
                 </div>
                 {(s.math_score || s.reading_score) && (
-                  <p className="text-xs text-[#6B7B9C]">
-                    {s.math_score ? `M:${s.math_score}` : ''}{s.math_score && s.reading_score ? ' · ' : ''}{s.reading_score ? `R:${s.reading_score}` : ''}
+                  <p className="text-[11px]" style={{ color: 'rgba(60,60,67,0.50)' }}>
+                    {s.math_score ? `M:${s.math_score}` : ''}
+                    {s.math_score && s.reading_score ? ' · ' : ''}
+                    {s.reading_score ? `R:${s.reading_score}` : ''}
                   </p>
                 )}
               </div>
@@ -203,28 +268,36 @@ export default async function StudentDetailPage({ params }: { params: { id: stri
       </div>
 
       {/* Payments */}
-      <div className="bg-white rounded-2xl p-5 border border-[#E2E8F5]">
+      <div>
         <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-semibold text-[#6B7B9C] uppercase tracking-wide">Payments</p>
-          <Link href={`/admin/finance/new?student_id=${student.id}`} className="text-xs font-semibold text-[#1B4FD8]">+ Add</Link>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.06em]" style={{ color: 'rgba(60,60,67,0.45)' }}>Payments</p>
+          <Link href={`/admin/finance/new?student_id=${student.id}`}
+            className="text-[12px] font-semibold" style={{ color: '#1B4FD8' }}>
+            + Add
+          </Link>
         </div>
         {!payments?.length ? (
-          <p className="text-[#6B7B9C] text-sm">No payments recorded.</p>
+          <div className="bg-white rounded-2xl p-5 text-center" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+            <p className="text-[13px]" style={{ color: 'rgba(60,60,67,0.50)' }}>No payments recorded</p>
+          </div>
         ) : (
-          <div className="space-y-2">
-            {payments.map(p => (
-              <div key={p.id} className="flex justify-between items-center py-1.5 border-b border-[#F5F7FF] last:border-0">
-                <div>
-                  <p className="text-sm font-semibold text-[#1A2340]">{p.month} · {p.subject}</p>
-                  <p className="text-xs text-[#6B7B9C]">{formatUZS(p.net_amount)}</p>
+          <div className="bg-white rounded-2xl overflow-hidden" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04)' }}>
+            {payments.map((p, i) => {
+              const ps = PAY_STATUS[p.status] ?? PAY_STATUS.unpaid
+              return (
+                <div key={p.id} className="flex items-center justify-between px-4 py-3.5"
+                  style={{ borderTop: i > 0 ? '1px solid rgba(60,60,67,0.07)' : 'none' }}>
+                  <div>
+                    <p className="text-[14px] font-semibold" style={{ color: '#1C1C1E' }}>{p.month} · {p.subject}</p>
+                    <p className="text-[12px] mt-0.5" style={{ color: 'rgba(60,60,67,0.50)' }}>{formatUZS(p.net_amount)}</p>
+                  </div>
+                  <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full"
+                    style={{ background: ps.bg, color: ps.color }}>
+                    {ps.label}
+                  </span>
                 </div>
-                <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-                  p.status === 'paid' ? 'bg-[#ECFDF5] text-emerald-700' :
-                  p.status === 'overdue' ? 'bg-[#FEF2F2] text-red-700' :
-                  'bg-[#FFFBEB] text-amber-700'
-                }`}>{p.status}</span>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
