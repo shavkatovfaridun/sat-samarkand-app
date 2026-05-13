@@ -1,3 +1,5 @@
+export const revalidate = 30
+
 import { createAdminClient } from '@/lib/supabase/admin'
 import Link from 'next/link'
 import { formatUZS, formatDate } from '@/lib/format'
