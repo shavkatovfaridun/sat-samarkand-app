@@ -47,3 +47,45 @@ export function validateTelegramInitData(initData: string, botToken: string): Te
 export function formatFullName(user: TelegramUser): string {
   return [user.first_name, user.last_name].filter(Boolean).join(' ')
 }
+
+export interface TelegramWidgetUser {
+  id: number
+  first_name: string
+  last_name?: string
+  username?: string
+  photo_url?: string
+}
+
+/**
+ * Validates data from the Telegram Login Widget (web, not Mini App).
+ * Widget uses SHA256(botToken) as the HMAC key — different from initData.
+ */
+export function validateTelegramWidgetData(
+  data: Record<string, string>,
+  botToken: string
+): TelegramWidgetUser {
+  const { hash, ...rest } = data
+
+  if (!hash) throw new Error('Missing hash')
+
+  const checkString = Object.entries(rest)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => `${k}=${v}`)
+    .join('\n')
+
+  const secretKey = crypto.createHash('sha256').update(botToken).digest()
+  const expectedHash = crypto.createHmac('sha256', secretKey).update(checkString).digest('hex')
+
+  if (expectedHash !== hash) throw new Error('Invalid signature')
+
+  const authDate = parseInt(rest.auth_date ?? '0', 10)
+  if (Math.floor(Date.now() / 1000) - authDate > 86400) throw new Error('Auth data expired')
+
+  return {
+    id: parseInt(rest.id, 10),
+    first_name: rest.first_name ?? '',
+    last_name: rest.last_name,
+    username: rest.username,
+    photo_url: rest.photo_url,
+  }
+}
