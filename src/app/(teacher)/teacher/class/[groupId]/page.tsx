@@ -3,21 +3,34 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { formatDate } from '@/lib/format'
+import { sendTelegramMessage } from '@/lib/bot'
 
 async function markAttendance(groupId: string, teacherTgId: number | null, formData: FormData) {
   'use server'
-  const admin = createAdminClient()
-  const today = new Date().toISOString().slice(0, 10)
+  const admin     = createAdminClient()
+  const today     = new Date().toISOString().slice(0, 10)
+  const studentId = formData.get('student_id') as string
+  const status    = formData.get('status')    as string
+
   await admin.from('attendance').upsert(
-    {
-      group_id: groupId,
-      student_id: formData.get('student_id') as string,
-      class_date: today,
-      status: formData.get('status') as string,
-      marked_by: teacherTgId,
-    },
+    { group_id: groupId, student_id: studentId, class_date: today, status, marked_by: teacherTgId },
     { onConflict: 'group_id,student_id,class_date' }
   )
+
+  // Notify parent when student is absent
+  if (status === 'absent') {
+    const { data: student } = await admin
+      .from('students')
+      .select('name, parent_telegram_id')
+      .eq('id', studentId)
+      .single()
+
+    if (student?.parent_telegram_id) {
+      const msg = `⚠️ <b>Attendance Alert</b>\n\n<b>${student.name}</b> was marked <b>absent</b> from today's class (${today}).\n\nIf you have any questions, please contact SAT Samarkand.\n\n📚 SAT Samarkand`
+      await sendTelegramMessage(student.parent_telegram_id, msg)
+    }
+  }
+
   redirect(`/teacher/class/${groupId}`)
 }
 

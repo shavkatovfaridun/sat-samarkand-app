@@ -10,6 +10,7 @@ const nav = [
   { href: '/admin/finance/expenses',   label: 'Expenses' },
   { href: '/admin/teachers',           label: 'Teachers' },
   { href: '/admin/problems',            label: 'Problems' },
+  { href: '/admin/vocab',              label: 'Vocab' },
   { href: '/admin/notifications',      label: 'Notify' },
 ]
 
