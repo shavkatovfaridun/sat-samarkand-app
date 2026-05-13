@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     // Fetch the user row to get role
     const { data: userRow } = await admin
       .from('users')
-      .select('id, role, telegram_id, name')
+      .select('role, telegram_id, name')
       .eq('telegram_id', tgUser.id)
       .single()
 
