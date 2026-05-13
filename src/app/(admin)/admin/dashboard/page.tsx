@@ -1,4 +1,3 @@
-export const revalidate = 30
 
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
