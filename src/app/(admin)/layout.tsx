@@ -6,6 +6,9 @@ const nav = [
   { href: '/admin/groups', label: 'Groups' },
   { href: '/admin/leads', label: 'Leads' },
   { href: '/admin/finance', label: 'Finance' },
+  { href: '/admin/finance/pl', label: 'P&L' },
+  { href: '/admin/finance/expenses', label: 'Expenses' },
+  { href: '/admin/teachers', label: 'Teachers' },
   { href: '/admin/notifications', label: '📤 Notify' },
 ]
 
