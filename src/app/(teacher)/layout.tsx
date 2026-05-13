@@ -4,32 +4,93 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 const nav = [
-  { href: '/teacher/dashboard', label: 'Classes', icon: '🏫' },
-  { href: '/teacher/assign', label: 'Assign HW', icon: '📋' },
+  {
+    href: '/teacher/dashboard',
+    label: 'Classes',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5" />
+      </svg>
+    ),
+    iconFill: (
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <path d="M11.7 2.805a.75.75 0 01.6 0A60.65 60.65 0 0122.83 8.72a.75.75 0 01-.231 1.337 49.949 49.949 0 00-9.902 3.912l-.003.002-.34.18a.75.75 0 01-.707 0A50.009 50.009 0 007.5 12.174v-.224c0-.131.067-.248.172-.311a54.614 54.614 0 014.653-2.52.75.75 0 00-.65-1.352 56.129 56.129 0 00-4.78 2.589 1.858 1.858 0 00-.859 1.228 49.803 49.803 0 00-4.634-1.527.75.75 0 01-.231-1.337A60.653 60.653 0 0111.7 2.805z" />
+        <path d="M13.06 15.473a48.45 48.45 0 017.666-3.282c.134 1.414.22 2.843.255 4.285a.75.75 0 01-.46.71 47.878 47.878 0 00-8.105 4.342.75.75 0 01-.832 0 47.877 47.877 0 00-8.104-4.342.75.75 0 01-.461-.71c.035-1.442.121-2.87.255-4.286A48.4 48.4 0 016 13.18v1.27a1.5 1.5 0 00-.14 2.508c-.09.38-.222.753-.397 1.11.452.213.901.434 1.346.661a6.729 6.729 0 00.551-1.608 1.5 1.5 0 00.14-2.67v-.645a48.549 48.549 0 013.44 1.668 2.25 2.25 0 002.12 0z" />
+        <path d="M4.462 19.462c.42-.419.753-.89 1-1.394.453.213.902.434 1.347.661a6.743 6.743 0 01-1.286 1.794.75.75 0 11-1.06-1.06z" />
+      </svg>
+    ),
+  },
+  {
+    href: '/teacher/assign',
+    label: 'Assign HW',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+    iconFill: (
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <path fillRule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM12.75 9a.75.75 0 00-1.5 0v2.25H9a.75.75 0 000 1.5h2.25V15a.75.75 0 001.5 0v-2.25H15a.75.75 0 000-1.5h-2.25V9z" clipRule="evenodd" />
+      </svg>
+    ),
+  },
 ]
 
 export default function TeacherLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   return (
-    <div className="min-h-screen bg-[#F5F7FF] pb-20">
-      <header className="bg-[#1B4FD8] px-4 py-3.5 flex items-center justify-between">
-        <span className="font-bold text-white">SAT Teacher</span>
-        <span className="text-xs text-white/60">satsamarkand.uz</span>
+    <div className="min-h-screen bg-[#F2F2F7] pb-24">
+      {/* Header */}
+      <header
+        style={{
+          background: 'rgba(242,242,247,0.90)',
+          backdropFilter: 'blur(20px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+          boxShadow: '0 0.5px 0 rgba(0,0,0,0.10)',
+          paddingTop: 'env(safe-area-inset-top)',
+        }}
+        className="sticky top-0 z-40 px-4 py-3.5 flex items-center justify-between"
+      >
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: '#1B4FD8' }}>
+            <svg viewBox="0 0 24 24" fill="white" className="w-4 h-4">
+              <path d="M11.7 2.805a.75.75 0 01.6 0A60.65 60.65 0 0122.83 8.72a.75.75 0 01-.231 1.337 49.949 49.949 0 00-9.902 3.912l-.003.002-.34.18a.75.75 0 01-.707 0A50.009 50.009 0 007.5 12.174v-.224c0-.131.067-.248.172-.311a54.614 54.614 0 014.653-2.52.75.75 0 00-.65-1.352 56.129 56.129 0 00-4.78 2.589 1.858 1.858 0 00-.859 1.228 49.803 49.803 0 00-4.634-1.527.75.75 0 01-.231-1.337A60.653 60.653 0 0111.7 2.805z" />
+            </svg>
+          </div>
+          <span className="font-bold text-[#1C1C1E] text-[15px]">SAT Samarkand</span>
+        </div>
+        <span className="text-xs font-medium" style={{ color: 'rgba(60,60,67,0.45)' }}>Teacher</span>
       </header>
-      <main className="max-w-4xl mx-auto px-4 py-6">{children}</main>
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#E2E8F5] flex shadow-[0_-2px_12px_rgba(27,79,216,0.08)]">
+
+      <main className="max-w-2xl mx-auto px-4 pt-5 pb-4">{children}</main>
+
+      {/* Bottom nav */}
+      <nav
+        className="fixed bottom-0 left-0 right-0 flex items-end"
+        style={{
+          background: 'rgba(242,242,247,0.88)',
+          backdropFilter: 'blur(20px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+          boxShadow: '0 -0.5px 0 rgba(0,0,0,0.10)',
+          paddingBottom: 'env(safe-area-inset-bottom)',
+        }}
+      >
         {nav.map((item) => {
-          const active = pathname === item.href
+          const active = pathname.startsWith(item.href)
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex-1 flex flex-col items-center justify-center py-2.5 gap-0.5 transition-colors ${
-                active ? 'text-[#1B4FD8]' : 'text-[#6B7B9C]'
-              }`}
+              className="flex-1 flex flex-col items-center gap-1 py-2.5"
             >
-              <span className="text-lg leading-none">{item.icon}</span>
-              <span className="text-[10px] font-medium">{item.label}</span>
+              <span className="w-6 h-6 transition-all duration-150"
+                style={{ color: active ? '#1B4FD8' : 'rgba(60,60,67,0.45)' }}>
+                {active ? item.iconFill : item.icon}
+              </span>
+              <span className="text-[10px] font-medium leading-none tracking-tight"
+                style={{ color: active ? '#1B4FD8' : 'rgba(60,60,67,0.50)' }}>
+                {item.label}
+              </span>
             </Link>
           )
         })}

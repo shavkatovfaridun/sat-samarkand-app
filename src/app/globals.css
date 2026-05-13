@@ -3,40 +3,165 @@
 @tailwind utilities;
 
 :root {
-  --sat-blue: #1B4FD8;
-  --sat-blue-dark: #1340B0;
-  --sat-blue-light: #EEF3FF;
-  --sat-gold: #F59E0B;
-  --sat-bg: #F5F7FF;
-  --sat-card: #FFFFFF;
-  --sat-text: #1A2340;
-  --sat-muted: #6B7B9C;
-  --sat-border: #E2E8F5;
+  --blue:        #1B4FD8;
+  --blue-deep:   #1340B0;
+  --blue-light:  #EEF3FF;
+  --bg:          #F2F2F7;
+  --bg-2:        #E5E5EA;
+  --card:        #FFFFFF;
+  --label:       #1C1C1E;
+  --label-2:     rgba(60,60,67,0.60);
+  --label-3:     rgba(60,60,67,0.30);
+  --separator:   rgba(60,60,67,0.12);
+  --fill:        rgba(120,120,128,0.12);
+  --fill-2:      rgba(120,120,128,0.08);
+  --green:       #34C759;
+  --red:         #FF3B30;
+  --orange:      #FF9500;
+  --amber:       #FFCC00;
 }
 
+* { -webkit-tap-highlight-color: transparent; }
+
+html { scroll-behavior: smooth; }
+
 body {
-  color: var(--sat-text);
-  background: var(--sat-bg);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Helvetica, Arial, sans-serif;
+  color: var(--label);
+  background: var(--bg);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', 'Segoe UI', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Prevent zoom on input focus on iOS */
+input[type="text"],
+input[type="number"],
+input[type="date"],
+input[type="time"],
+input[type="email"],
+select,
+textarea {
+  font-size: 16px;
 }
 
 @layer utilities {
   .text-balance { text-wrap: balance; }
 
-  .sat-card {
-    @apply bg-white rounded-2xl border border-[#E2E8F5] shadow-sm;
+  /* Cards */
+  .card {
+    @apply bg-white rounded-2xl;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.04), 0 4px 24px rgba(0,0,0,0.06);
   }
 
-  .sat-btn-primary {
-    @apply bg-[#1B4FD8] text-white rounded-xl font-semibold transition-all active:scale-95;
+  .card-inset {
+    @apply rounded-2xl;
+    background: var(--fill);
   }
 
-  .sat-btn-secondary {
-    @apply bg-[#EEF3FF] text-[#1B4FD8] rounded-xl font-semibold transition-all active:scale-95;
+  /* Inputs — iOS style */
+  .input {
+    @apply w-full rounded-xl px-4 py-3 text-[15px] text-[#1C1C1E] placeholder-[rgba(60,60,67,0.3)] focus:outline-none transition-all;
+    background: var(--fill);
+    border: none;
+  }
+  .input:focus {
+    background: rgba(120,120,128,0.16);
+    box-shadow: 0 0 0 3px rgba(27,79,216,0.15);
   }
 
-  .sat-label {
-    @apply text-xs font-medium text-[#6B7B9C] uppercase tracking-wide;
+  /* Select iOS style */
+  .select {
+    @apply input appearance-none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(60,60,67,0.4)' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
   }
+
+  /* Buttons */
+  .btn-primary {
+    @apply flex items-center justify-center w-full rounded-xl font-semibold text-[15px] text-white transition-all active:scale-[0.97] select-none;
+    background: var(--blue);
+    padding: 14px;
+  }
+  .btn-primary:hover { background: var(--blue-deep); }
+
+  .btn-secondary {
+    @apply flex items-center justify-center w-full rounded-xl font-semibold text-[15px] transition-all active:scale-[0.97] select-none;
+    color: var(--blue);
+    background: var(--blue-light);
+    padding: 14px;
+  }
+
+  .btn-ghost {
+    @apply flex items-center justify-center rounded-xl font-semibold text-[15px] transition-all active:scale-[0.97] select-none;
+    color: var(--blue);
+    background: transparent;
+    padding: 10px 16px;
+  }
+
+  .btn-destructive {
+    @apply flex items-center justify-center rounded-xl font-medium text-[14px] transition-all active:scale-[0.97] select-none;
+    color: var(--red);
+    background: rgba(255,59,48,0.10);
+    padding: 8px 14px;
+  }
+
+  /* Labels */
+  .section-label {
+    @apply text-[11px] font-semibold uppercase tracking-[0.06em];
+    color: var(--label-2);
+  }
+
+  /* Pill badges */
+  .badge {
+    @apply text-[11px] font-semibold px-2.5 py-1 rounded-full;
+  }
+  .badge-blue   { background: rgba(27,79,216,0.12); color: var(--blue); }
+  .badge-green  { background: rgba(52,199,89,0.12);  color: #1E8A3C; }
+  .badge-red    { background: rgba(255,59,48,0.12);   color: #C0281F; }
+  .badge-orange { background: rgba(255,149,0,0.12);   color: #B86800; }
+  .badge-gray   { background: rgba(120,120,128,0.12); color: rgba(60,60,67,0.70); }
+
+  /* Separator */
+  .sep {
+    height: 1px;
+    background: var(--separator);
+  }
+
+  /* Stat number */
+  .stat-num {
+    @apply text-[34px] font-bold tracking-tight;
+    color: var(--label);
+    line-height: 1;
+  }
+
+  /* Tinted containers */
+  .tint-blue   { background: rgba(27,79,216,0.08); }
+  .tint-green  { background: rgba(52,199,89,0.10); }
+  .tint-red    { background: rgba(255,59,48,0.08); }
+  .tint-orange { background: rgba(255,149,0,0.10); }
+  .tint-purple { background: rgba(175,82,222,0.10); }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 0; height: 0; }
+
+/* Smooth page transitions */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page-enter { animation: fadeUp 0.2s ease-out both; }
+
+/* Skeleton shimmer */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--fill) 25%, rgba(120,120,128,0.16) 50%, var(--fill) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: 8px;
 }
