@@ -7,6 +7,7 @@ const nav = [
   { href: '/student/dashboard', label: 'Home', icon: '🏠' },
   { href: '/student/homework', label: 'Homework', icon: '📝' },
   { href: '/student/scores', label: 'Scores', icon: '📊' },
+  { href: '/student/attendance', label: 'Attendance', icon: '📅' },
   { href: '/student/payments', label: 'Payments', icon: '💳' },
 ]
 
