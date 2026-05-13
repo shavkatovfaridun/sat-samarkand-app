@@ -18,11 +18,15 @@ export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
   const role = req.cookies.get('user-role')?.value
 
-  // @supabase/ssr stores the session across several chunked cookies named
-  // "sb-<project-ref>-auth-token" or "sb-<project-ref>-auth-token.0" etc.
-  // Check for ANY such cookie instead of the hard-coded "sb-access-token".
+  // Two possible cookie shapes depending on auth path:
+  //   1. Telegram bot login → sets "sb-access-token" (our custom name)
+  //   2. Telegram Mini App login (future) → @supabase/ssr sets
+  //      "sb-<project-ref>-auth-token[.0]" style cookies
+  // Accept either.
   const hasSession = req.cookies.getAll().some(
-    c => c.name.startsWith('sb-') && c.name.includes('auth-token')
+    c =>
+      c.name === 'sb-access-token' ||
+      (c.name.startsWith('sb-') && c.name.includes('auth-token'))
   )
 
   const isProtected = PROTECTED_PREFIXES.some(p => pathname.startsWith(p))
