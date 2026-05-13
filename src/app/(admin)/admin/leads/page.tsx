@@ -43,6 +43,12 @@ export default async function LeadsPage({ searchParams }: { searchParams: { stag
           <p className="text-[#6B7B9C] text-xs font-medium uppercase tracking-wide mb-1">CRM</p>
           <h1 className="text-2xl font-bold text-[#1A2340]">Leads Pipeline</h1>
         </div>
+        <Link
+          href="/admin/leads/new"
+          className="bg-[#1B4FD8] text-white px-4 py-2.5 rounded-xl text-sm font-semibold active:scale-95 transition-transform"
+        >
+          + Add
+        </Link>
       </div>
 
       {/* Pipeline filter chips */}
