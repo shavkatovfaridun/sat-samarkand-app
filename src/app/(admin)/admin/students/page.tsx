@@ -1,11 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 
-const STATUS_COLORS: Record<string, string> = {
-  active: 'bg-green-100 text-green-700',
-  paused: 'bg-yellow-100 text-yellow-700',
-  graduated: 'bg-blue-100 text-blue-700',
-  dropped: 'bg-gray-100 text-gray-500',
+const STATUS_STYLES: Record<string, string> = {
+  active: 'bg-[#ECFDF5] text-emerald-700',
+  paused: 'bg-[#FFFBEB] text-amber-700',
+  graduated: 'bg-[#EEF3FF] text-[#1B4FD8]',
+  dropped: 'bg-[#F1F5F9] text-slate-500',
 }
 
 export default async function StudentsPage({ searchParams }: { searchParams: { status?: string } }) {
@@ -22,61 +22,70 @@ export default async function StudentsPage({ searchParams }: { searchParams: { s
 
   const { data: students } = await query
 
-  const statusFilters = ['', 'active', 'paused', 'graduated', 'dropped']
+  const statusFilters = [
+    { value: '', label: 'All' },
+    { value: 'active', label: 'Active' },
+    { value: 'paused', label: 'Paused' },
+    { value: 'graduated', label: 'Graduated' },
+    { value: 'dropped', label: 'Dropped' },
+  ]
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-bold">Students</h1>
-        <Link href="/admin/students/new" className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm">
-          + Add Student
+        <div>
+          <p className="text-[#6B7B9C] text-xs font-medium uppercase tracking-wide mb-1">All Students</p>
+          <h1 className="text-2xl font-bold text-[#1A2340]">Students</h1>
+        </div>
+        <Link
+          href="/admin/students/new"
+          className="bg-[#1B4FD8] text-white px-4 py-2.5 rounded-xl text-sm font-semibold active:scale-95 transition-transform"
+        >
+          + Add
         </Link>
       </div>
 
-      {/* Filter tabs */}
-      <div className="flex gap-2 mb-4 overflow-x-auto">
-        {statusFilters.map((s) => (
+      <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
+        {statusFilters.map((f) => (
           <Link
-            key={s}
-            href={s ? `/admin/students?status=${s}` : '/admin/students'}
-            className={`shrink-0 px-3 py-1.5 rounded-full text-xs border ${
-              (searchParams.status ?? '') === s
-                ? 'bg-gray-900 text-white border-gray-900'
-                : 'bg-white text-gray-600 border-gray-200'
+            key={f.value}
+            href={f.value ? `/admin/students?status=${f.value}` : '/admin/students'}
+            className={`shrink-0 px-4 py-2 rounded-full text-xs font-semibold border transition-colors ${
+              (searchParams.status ?? '') === f.value
+                ? 'bg-[#1B4FD8] text-white border-[#1B4FD8]'
+                : 'bg-white text-[#6B7B9C] border-[#E2E8F5] hover:border-[#1B4FD8] hover:text-[#1B4FD8]'
             }`}
           >
-            {s || 'All'}
+            {f.label}
           </Link>
         ))}
       </div>
 
       <div className="space-y-2">
         {!students?.length ? (
-          <div className="bg-white rounded-xl p-8 text-center text-gray-400 text-sm">
-            No students found.
+          <div className="bg-white rounded-2xl p-8 text-center border border-[#E2E8F5]">
+            <p className="text-3xl mb-2">👥</p>
+            <p className="text-[#6B7B9C] text-sm">No students found</p>
           </div>
         ) : (
           students.map((s) => (
             <Link
               key={s.id}
               href={`/admin/students/${s.id}`}
-              className="block bg-white rounded-xl p-4 border border-gray-100 hover:border-gray-200"
+              className="flex items-center justify-between bg-white rounded-2xl px-4 py-3.5 border border-[#E2E8F5] hover:border-[#C7D7FA] active:scale-[0.99] transition-all"
             >
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="font-medium truncate">{s.name}</p>
-                  <p className="text-xs text-gray-500 mt-0.5 capitalize">
-                    {s.subject} · {s.type} · {s.phase}
-                  </p>
-                  {s.current_score && (
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      Score: {s.current_score} → Target: {s.target_score}
-                    </p>
-                  )}
-                </div>
-                <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full ${STATUS_COLORS[s.status] ?? ''}`}>
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-[#1A2340] truncate">{s.name}</p>
+                <p className="text-xs text-[#6B7B9C] mt-0.5 capitalize">
+                  {s.subject} · {s.type} · {s.phase}
+                  {s.current_score ? ` · ${s.current_score}→${s.target_score}` : ''}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 ml-3">
+                <span className={`shrink-0 text-xs px-2.5 py-1 rounded-full font-medium ${STATUS_STYLES[s.status] ?? ''}`}>
                   {s.status}
                 </span>
+                <span className="text-[#6B7B9C] text-sm">›</span>
               </div>
             </Link>
           ))

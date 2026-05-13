@@ -10,14 +10,16 @@ const nav = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-4 overflow-x-auto">
-        <span className="font-bold text-sm text-gray-900 shrink-0">SAT Admin</span>
+    <div className="min-h-screen bg-[#F5F7FF]">
+      <nav className="bg-[#1B4FD8] px-4 py-0 flex items-center gap-1 overflow-x-auto">
+        <span className="font-bold text-sm text-white shrink-0 py-3.5 pr-4 border-r border-white/20 mr-2">
+          SAT Admin
+        </span>
         {nav.map((item) => (
           <Link
             key={item.href}
             href={item.href}
-            className="text-sm text-gray-600 hover:text-gray-900 shrink-0"
+            className="text-sm text-white/80 hover:text-white hover:bg-white/10 shrink-0 px-3 py-3.5 rounded transition-colors"
           >
             {item.label}
           </Link>

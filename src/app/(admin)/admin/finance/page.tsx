@@ -2,12 +2,12 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { formatUZS, formatDate } from '@/lib/format'
 
-const STATUS_COLORS: Record<string, string> = {
-  paid: 'bg-green-100 text-green-700',
-  unpaid: 'bg-yellow-100 text-yellow-700',
-  overdue: 'bg-red-100 text-red-700',
-  partial: 'bg-orange-100 text-orange-700',
-  frozen: 'bg-gray-100 text-gray-500',
+const STATUS_STYLES: Record<string, string> = {
+  paid: 'bg-[#ECFDF5] text-emerald-700',
+  unpaid: 'bg-[#FFFBEB] text-amber-700',
+  overdue: 'bg-[#FEF2F2] text-red-700',
+  partial: 'bg-[#FFF7ED] text-orange-700',
+  frozen: 'bg-[#F1F5F9] text-slate-500',
 }
 
 export default async function FinancePage({ searchParams }: { searchParams: { status?: string; month?: string } }) {
@@ -17,10 +17,7 @@ export default async function FinancePage({ searchParams }: { searchParams: { st
 
   let query = supabase
     .from('payments')
-    .select(`
-      id, month, subject, net_amount, status, due_date, paid_date, receipt_sent,
-      students(id, name)
-    `)
+    .select(`id, month, subject, net_amount, status, due_date, paid_date, receipt_sent, students(id, name)`)
     .order('due_date', { ascending: false })
 
   if (searchParams.status) query = query.eq('status', searchParams.status)
@@ -28,7 +25,6 @@ export default async function FinancePage({ searchParams }: { searchParams: { st
 
   const { data: payments } = await query
 
-  // Summary stats
   const { data: summaryData } = await supabase
     .from('payments')
     .select('status, net_amount')
@@ -38,88 +34,103 @@ export default async function FinancePage({ searchParams }: { searchParams: { st
   const totalReceived = summaryData?.filter((p) => p.status === 'paid').reduce((sum, p) => sum + p.net_amount, 0) ?? 0
   const totalOverdue = summaryData?.filter((p) => p.status === 'overdue').reduce((sum, p) => sum + p.net_amount, 0) ?? 0
 
-  const filters = ['', 'paid', 'unpaid', 'overdue', 'partial', 'frozen']
+  const filters = [
+    { value: '', label: 'This Month' },
+    { value: 'paid', label: 'Paid' },
+    { value: 'unpaid', label: 'Unpaid' },
+    { value: 'overdue', label: 'Overdue' },
+    { value: 'partial', label: 'Partial' },
+    { value: 'frozen', label: 'Frozen' },
+  ]
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-bold">Finance</h1>
-        <Link href="/admin/finance/new" className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm">
-          + Add Payment
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <p className="text-[#6B7B9C] text-xs font-medium uppercase tracking-wide mb-1">Payments</p>
+          <h1 className="text-2xl font-bold text-[#1A2340]">Finance</h1>
+        </div>
+        <Link
+          href="/admin/finance/new"
+          className="bg-[#1B4FD8] text-white px-4 py-2.5 rounded-xl text-sm font-semibold active:scale-95 transition-transform"
+        >
+          + Add
         </Link>
       </div>
 
-      {/* Month picker + summary */}
-      <div className="bg-white rounded-xl p-4 border border-gray-100 mb-4">
-        <div className="flex items-center gap-3 mb-3">
-          <input
-            type="month"
-            defaultValue={currentMonth}
-            className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm"
-            readOnly
-          />
-          <span className="text-xs text-gray-400">(filter by month above)</span>
+      {/* Summary cards */}
+      <div className="grid grid-cols-3 gap-3 mb-5">
+        <div className="bg-white rounded-2xl p-3 border border-[#E2E8F5] text-center">
+          <p className="text-[10px] text-[#6B7B9C] font-medium uppercase tracking-wide mb-1">Expected</p>
+          <p className="font-bold text-xs text-[#1A2340]">{formatUZS(totalExpected)}</p>
         </div>
-        <div className="grid grid-cols-3 gap-3">
-          <div>
-            <p className="text-xs text-gray-500">Expected</p>
-            <p className="font-bold text-sm">{formatUZS(totalExpected)}</p>
-          </div>
-          <div>
-            <p className="text-xs text-gray-500">Received</p>
-            <p className="font-bold text-sm text-green-600">{formatUZS(totalReceived)}</p>
-          </div>
-          <div>
-            <p className="text-xs text-gray-500">Overdue</p>
-            <p className="font-bold text-sm text-red-600">{formatUZS(totalOverdue)}</p>
-          </div>
+        <div className="bg-[#ECFDF5] rounded-2xl p-3 border border-[#A7F3D0] text-center">
+          <p className="text-[10px] text-emerald-600 font-medium uppercase tracking-wide mb-1">Received</p>
+          <p className="font-bold text-xs text-emerald-700">{formatUZS(totalReceived)}</p>
+        </div>
+        <div className="bg-[#FEF2F2] rounded-2xl p-3 border border-[#FECACA] text-center">
+          <p className="text-[10px] text-red-600 font-medium uppercase tracking-wide mb-1">Overdue</p>
+          <p className="font-bold text-xs text-red-700">{formatUZS(totalOverdue)}</p>
         </div>
       </div>
 
-      {/* Status filter */}
-      <div className="flex gap-2 mb-4 overflow-x-auto">
-        {filters.map((s) => (
-          <Link
-            key={s}
-            href={s ? `/admin/finance?status=${s}` : `/admin/finance?month=${currentMonth}`}
-            className={`shrink-0 px-3 py-1.5 rounded-full text-xs border ${
-              (searchParams.status ?? '') === s && !(!s && searchParams.status)
-                ? 'bg-gray-900 text-white border-gray-900'
-                : 'bg-white text-gray-600 border-gray-200'
-            }`}
-          >
-            {s || 'This Month'}
-          </Link>
-        ))}
+      {/* Filters */}
+      <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
+        {filters.map((f) => {
+          const isActive = f.value
+            ? searchParams.status === f.value
+            : !searchParams.status
+          return (
+            <Link
+              key={f.value}
+              href={f.value ? `/admin/finance?status=${f.value}` : `/admin/finance?month=${currentMonth}`}
+              className={`shrink-0 px-4 py-2 rounded-full text-xs font-semibold border transition-colors ${
+                isActive
+                  ? 'bg-[#1B4FD8] text-white border-[#1B4FD8]'
+                  : 'bg-white text-[#6B7B9C] border-[#E2E8F5] hover:border-[#1B4FD8] hover:text-[#1B4FD8]'
+              }`}
+            >
+              {f.label}
+            </Link>
+          )
+        })}
       </div>
 
       <div className="space-y-2">
         {!payments?.length ? (
-          <div className="bg-white rounded-xl p-8 text-center text-gray-400 text-sm">No payments found.</div>
+          <div className="bg-white rounded-2xl p-8 text-center border border-[#E2E8F5]">
+            <p className="text-3xl mb-2">💰</p>
+            <p className="text-[#6B7B9C] text-sm">No payments found</p>
+          </div>
         ) : (
           payments.map((p) => {
             const student = (p.students as unknown) as { id: string; name: string } | null
             return (
-              <div key={p.id} className="bg-white rounded-xl p-4 border border-gray-100">
-                <div className="flex items-start justify-between">
-                  <div className="min-w-0">
-                    <p className="font-medium truncate">
+              <div key={p.id} className="bg-white rounded-2xl px-4 py-3.5 border border-[#E2E8F5]">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-[#1A2340] truncate">
                       {student ? (
-                        <Link href={`/admin/students/${student.id}`} className="hover:underline">
+                        <Link href={`/admin/students/${student.id}`} className="hover:text-[#1B4FD8] transition-colors">
                           {student.name}
                         </Link>
                       ) : '—'}
                     </p>
-                    <p className="text-xs text-gray-500 mt-0.5 capitalize">{p.month} · {p.subject}</p>
-                    <p className="text-xs text-gray-400">{formatUZS(p.net_amount)}</p>
-                    {p.due_date && <p className="text-xs text-gray-400">Due: {formatDate(p.due_date)}</p>}
+                    <p className="text-xs text-[#6B7B9C] mt-0.5 capitalize">{p.month} · {p.subject}</p>
+                    <p className="text-xs font-semibold text-[#1A2340] mt-0.5">{formatUZS(p.net_amount)}</p>
+                    {p.due_date && (
+                      <p className="text-xs text-[#6B7B9C]">Due: {formatDate(p.due_date)}</p>
+                    )}
                   </div>
-                  <div className="flex flex-col items-end gap-1.5">
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLORS[p.status] ?? ''}`}>
+                  <div className="flex flex-col items-end gap-2 shrink-0">
+                    <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${STATUS_STYLES[p.status] ?? ''}`}>
                       {p.status}
                     </span>
                     {p.status !== 'paid' && (
-                      <Link href={`/admin/finance/${p.id}/mark-paid`} className="text-xs text-blue-600 hover:underline">
+                      <Link
+                        href={`/admin/finance/${p.id}/mark-paid`}
+                        className="text-xs font-semibold text-[#1B4FD8] bg-[#EEF3FF] px-3 py-1 rounded-lg"
+                      >
                         Mark paid
                       </Link>
                     )}

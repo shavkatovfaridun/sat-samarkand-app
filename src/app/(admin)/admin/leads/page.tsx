@@ -3,20 +3,20 @@ import Link from 'next/link'
 import { formatDate } from '@/lib/format'
 
 const STAGE_ORDER = ['NEW', 'NO_ANSWER', 'CONTACTED', 'NURTURE', 'TRIAL_SCHEDULED', 'TRIAL_DONE', 'ENROLLED', 'LOST']
-const STAGE_COLORS: Record<string, string> = {
-  NEW: 'bg-blue-100 text-blue-700',
-  NO_ANSWER: 'bg-gray-100 text-gray-600',
-  CONTACTED: 'bg-purple-100 text-purple-700',
-  NURTURE: 'bg-yellow-100 text-yellow-700',
-  TRIAL_SCHEDULED: 'bg-orange-100 text-orange-700',
-  TRIAL_DONE: 'bg-indigo-100 text-indigo-700',
-  ENROLLED: 'bg-green-100 text-green-700',
-  LOST: 'bg-red-100 text-red-500',
+const STAGE_STYLES: Record<string, string> = {
+  NEW: 'bg-[#EEF3FF] text-[#1B4FD8]',
+  NO_ANSWER: 'bg-[#F1F5F9] text-slate-500',
+  CONTACTED: 'bg-[#F5F3FF] text-violet-700',
+  NURTURE: 'bg-[#FFFBEB] text-amber-700',
+  TRIAL_SCHEDULED: 'bg-[#FFF7ED] text-orange-700',
+  TRIAL_DONE: 'bg-[#EEF3FF] text-indigo-700',
+  ENROLLED: 'bg-[#ECFDF5] text-emerald-700',
+  LOST: 'bg-[#FEF2F2] text-red-600',
 }
-const TEMP_COLORS: Record<string, string> = {
+const TEMP_DOTS: Record<string, string> = {
   HOT: 'text-red-500',
   WARM: 'text-orange-400',
-  COLD: 'text-blue-400',
+  COLD: 'text-[#1B4FD8]',
 }
 
 export default async function LeadsPage({ searchParams }: { searchParams: { stage?: string } }) {
@@ -31,29 +31,29 @@ export default async function LeadsPage({ searchParams }: { searchParams: { stag
 
   const { data: leads } = await query
 
-  // Count by stage
-  const { data: stageCounts } = await supabase
-    .from('leads')
-    .select('stage')
-
+  const { data: stageCounts } = await supabase.from('leads').select('stage')
   const countByStage = Object.fromEntries(
     STAGE_ORDER.map((s) => [s, stageCounts?.filter((l) => l.stage === s).length ?? 0])
   )
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-bold">CRM Leads</h1>
-        <Link href="/admin/leads/new" className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm">
-          + Add Lead
-        </Link>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <p className="text-[#6B7B9C] text-xs font-medium uppercase tracking-wide mb-1">CRM</p>
+          <h1 className="text-2xl font-bold text-[#1A2340]">Leads Pipeline</h1>
+        </div>
       </div>
 
-      {/* Pipeline overview */}
-      <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
+      {/* Pipeline filter chips */}
+      <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
         <Link
           href="/admin/leads"
-          className={`shrink-0 px-3 py-1.5 rounded-full text-xs border ${!searchParams.stage ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-200'}`}
+          className={`shrink-0 px-4 py-2 rounded-full text-xs font-semibold border transition-colors ${
+            !searchParams.stage
+              ? 'bg-[#1B4FD8] text-white border-[#1B4FD8]'
+              : 'bg-white text-[#6B7B9C] border-[#E2E8F5]'
+          }`}
         >
           All ({leads?.length ?? 0})
         </Link>
@@ -61,44 +61,52 @@ export default async function LeadsPage({ searchParams }: { searchParams: { stag
           <Link
             key={stage}
             href={`/admin/leads?stage=${stage}`}
-            className={`shrink-0 px-3 py-1.5 rounded-full text-xs border ${searchParams.stage === stage ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-200'}`}
+            className={`shrink-0 px-4 py-2 rounded-full text-xs font-semibold border transition-colors ${
+              searchParams.stage === stage
+                ? 'bg-[#1B4FD8] text-white border-[#1B4FD8]'
+                : 'bg-white text-[#6B7B9C] border-[#E2E8F5]'
+            }`}
           >
-            {stage.replace('_', ' ')} ({countByStage[stage] ?? 0})
+            {stage.replace(/_/g, ' ')} ({countByStage[stage] ?? 0})
           </Link>
         ))}
       </div>
 
       <div className="space-y-2">
         {!leads?.length ? (
-          <div className="bg-white rounded-xl p-8 text-center text-gray-400 text-sm">No leads found.</div>
+          <div className="bg-white rounded-2xl p-8 text-center border border-[#E2E8F5]">
+            <p className="text-3xl mb-2">📊</p>
+            <p className="text-[#6B7B9C] text-sm">No leads found</p>
+          </div>
         ) : (
           leads.map((lead) => (
             <Link
               key={lead.id}
               href={`/admin/leads/${lead.id}`}
-              className="block bg-white rounded-xl p-4 border border-gray-100 hover:border-gray-200"
+              className="flex items-start justify-between bg-white rounded-2xl px-4 py-3.5 border border-[#E2E8F5] hover:border-[#C7D7FA] active:scale-[0.99] transition-all gap-3"
             >
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    {lead.temperature && (
-                      <span className={`text-base ${TEMP_COLORS[lead.temperature] ?? ''}`}>●</span>
-                    )}
-                    <p className="font-medium truncate">{lead.name}</p>
-                  </div>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {lead.phone ?? '—'} · {lead.source ?? '—'}
-                  </p>
-                  {(lead.current_score || lead.target_score) && (
-                    <p className="text-xs text-gray-400">
-                      Score: {lead.current_score ?? '—'} → {lead.target_score ?? '—'}
-                    </p>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  {lead.temperature && (
+                    <span className={`text-xs ${TEMP_DOTS[lead.temperature] ?? ''}`}>●</span>
                   )}
-                  <p className="text-xs text-gray-300 mt-0.5">{formatDate(lead.updated_at)}</p>
+                  <p className="font-semibold text-[#1A2340] truncate">{lead.name}</p>
                 </div>
-                <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full ${STAGE_COLORS[lead.stage] ?? 'bg-gray-100 text-gray-600'}`}>
-                  {lead.stage?.replace('_', ' ')}
+                <p className="text-xs text-[#6B7B9C]">
+                  {lead.phone ?? '—'} · {lead.source ?? '—'}
+                </p>
+                {(lead.current_score || lead.target_score) && (
+                  <p className="text-xs text-[#6B7B9C]">
+                    Score: {lead.current_score ?? '—'} → {lead.target_score ?? '—'}
+                  </p>
+                )}
+                <p className="text-xs text-[#6B7B9C]/60 mt-1">{formatDate(lead.updated_at)}</p>
+              </div>
+              <div className="flex flex-col items-end gap-2 shrink-0">
+                <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${STAGE_STYLES[lead.stage] ?? 'bg-[#F1F5F9] text-slate-500'}`}>
+                  {lead.stage?.replace(/_/g, ' ')}
                 </span>
+                <span className="text-[#6B7B9C] text-sm">›</span>
               </div>
             </Link>
           ))
