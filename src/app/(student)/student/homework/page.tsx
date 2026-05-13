@@ -32,70 +32,89 @@ export default async function StudentHomeworkPage() {
         .eq('student_id', student.id)
     : { data: null }
 
-  const submittedIds = new Set(submissions?.map((s) => s.assignment_id))
-  const submissionMap = Object.fromEntries(submissions?.map((s) => [s.assignment_id, s]) ?? [])
+  const submittedIds   = new Set(submissions?.map(s => s.assignment_id))
+  const submissionMap  = Object.fromEntries(submissions?.map(s => [s.assignment_id, s]) ?? [])
 
-  const today = new Date().toISOString().slice(0, 10)
+  const today           = new Date().toISOString().slice(0, 10)
   const todayAssignments = assignments?.filter(a => a.due_date === today) ?? []
-  const pastAssignments = assignments?.filter(a => a.due_date !== today) ?? []
+  const pastAssignments  = assignments?.filter(a => a.due_date !== today) ?? []
 
-  const doneCount = submissions?.length ?? 0
+  const doneCount  = submissions?.length ?? 0
   const totalCount = assignments?.length ?? 0
+  const pctDone    = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0
 
   return (
-    <div>
-      <div className="mb-5">
-        <p className="text-[#6B7B9C] text-xs font-medium uppercase tracking-wide mb-1">Homework</p>
-        <h1 className="text-2xl font-bold text-[#1A2340]">My Homework</h1>
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="pt-1">
+        <p className="text-[13px] font-medium mb-0.5" style={{ color: 'rgba(60,60,67,0.55)' }}>Student</p>
+        <h1 className="text-[28px] font-bold tracking-tight" style={{ color: '#1C1C1E' }}>My Homework</h1>
       </div>
 
-      {/* Stats bar */}
+      {/* Progress bar */}
       {totalCount > 0 && (
-        <div className="bg-white rounded-2xl p-4 border border-[#E2E8F5] mb-4">
+        <div className="bg-white rounded-2xl p-4" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-medium text-[#6B7B9C]">Completed</p>
-            <p className="text-xs font-bold text-[#1B4FD8]">{doneCount} / {totalCount}</p>
+            <p className="text-[12px] font-semibold" style={{ color: 'rgba(60,60,67,0.55)' }}>Completed</p>
+            <p className="text-[12px] font-bold" style={{ color: '#1B4FD8' }}>{doneCount} / {totalCount}</p>
           </div>
-          <div className="w-full bg-[#EEF3FF] rounded-full h-2.5">
-            <div className="bg-[#1B4FD8] h-2.5 rounded-full transition-all"
-              style={{ width: `${totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0}%` }} />
+          <div className="w-full rounded-full overflow-hidden" style={{ height: 6, background: 'rgba(27,79,216,0.10)' }}>
+            <div className="h-full rounded-full transition-all"
+              style={{ width: `${pctDone}%`, background: '#1B4FD8' }} />
           </div>
         </div>
       )}
 
       {/* Today's assignments */}
       {todayAssignments.length > 0 && (
-        <div className="mb-4">
-          <p className="text-xs font-semibold text-[#6B7B9C] uppercase tracking-wide mb-2">Due Today</p>
-          <div className="space-y-2">
-            {todayAssignments.map((a) => {
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.06em] mb-2 px-1" style={{ color: 'rgba(60,60,67,0.45)' }}>
+            Due Today
+          </p>
+          <div className="space-y-2.5">
+            {todayAssignments.map(a => {
               const submitted = submittedIds.has(a.id)
               const sub = submissionMap[a.id]
               const pct = sub?.total ? Math.round((sub.score / sub.total) * 100) : null
+              const scoreColor = pct === null ? '#1B4FD8' : pct >= 70 ? '#1E8A3C' : pct >= 50 ? '#B86800' : '#C0281F'
+
               return (
-                <div key={a.id} className={`bg-white rounded-2xl p-4 border ${submitted ? 'border-[#A7F3D0]' : 'border-[#C7D7FA]'}`}>
+                <div key={a.id} className="bg-white rounded-2xl p-4"
+                  style={{
+                    boxShadow: '0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04)',
+                    borderLeft: submitted ? '3px solid #34C759' : '3px solid #1B4FD8',
+                  }}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
-                      <p className="font-semibold text-[#1A2340]">{a.problem_ids?.length ?? 0} problems</p>
-                      <p className="text-xs text-[#6B7B9C] mt-0.5">Due: {formatDate(a.due_date)}</p>
+                      <p className="text-[14px] font-semibold" style={{ color: '#1C1C1E' }}>
+                        {a.problem_ids?.length ?? 0} problems
+                      </p>
+                      <p className="text-[12px] mt-0.5" style={{ color: 'rgba(60,60,67,0.50)' }}>
+                        Due: {formatDate(a.due_date)}
+                      </p>
                       {submitted && sub && (
-                        <div className="mt-2">
+                        <div className="mt-2.5">
                           <div className="flex items-center justify-between mb-1">
-                            <p className="text-xs text-[#6B7B9C]">Score</p>
-                            <p className="text-xs font-bold text-[#1B4FD8]">{sub.score}/{sub.total} ({pct}%)</p>
+                            <p className="text-[11px]" style={{ color: 'rgba(60,60,67,0.55)' }}>Score</p>
+                            <p className="text-[11px] font-bold" style={{ color: scoreColor }}>
+                              {sub.score}/{sub.total} ({pct}%)
+                            </p>
                           </div>
-                          <div className="w-full bg-[#EEF3FF] rounded-full h-1.5">
-                            <div className={`h-1.5 rounded-full ${pct && pct >= 70 ? 'bg-emerald-500' : pct && pct >= 50 ? 'bg-amber-400' : 'bg-red-400'}`}
-                              style={{ width: `${pct}%` }} />
+                          <div className="w-full rounded-full overflow-hidden" style={{ height: 5, background: 'rgba(120,120,128,0.12)' }}>
+                            <div className="h-full rounded-full" style={{ width: `${pct}%`, background: scoreColor }} />
                           </div>
                         </div>
                       )}
                     </div>
                     {submitted ? (
-                      <span className="text-xs bg-[#ECFDF5] text-emerald-700 px-2.5 py-1 rounded-full font-semibold shrink-0">✓ Done</span>
+                      <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full shrink-0"
+                        style={{ background: 'rgba(52,199,89,0.12)', color: '#1E8A3C' }}>
+                        ✓ Done
+                      </span>
                     ) : (
                       <Link href={`/student/homework/${a.id}`}
-                        className="text-xs bg-[#1B4FD8] text-white px-3 py-1.5 rounded-xl font-semibold shrink-0 active:scale-95 transition-transform">
+                        className="text-[12px] font-bold text-white px-3 py-1.5 rounded-xl shrink-0 transition-all active:scale-95"
+                        style={{ background: '#1B4FD8' }}>
                         Start →
                       </Link>
                     )}
@@ -110,35 +129,47 @@ export default async function StudentHomeworkPage() {
       {/* Past assignments */}
       {pastAssignments.length > 0 && (
         <div>
-          <p className="text-xs font-semibold text-[#6B7B9C] uppercase tracking-wide mb-2">Past Assignments</p>
-          <div className="bg-white rounded-2xl border border-[#E2E8F5] divide-y divide-[#F5F7FF]">
-            {pastAssignments.map((a) => {
-              const submitted = submittedIds.has(a.id)
-              const sub = submissionMap[a.id]
-              const isOverdue = a.due_date < today && !submitted
-              const pct = sub?.total ? Math.round((sub.score / sub.total) * 100) : null
+          <p className="text-[11px] font-semibold uppercase tracking-[0.06em] mb-2 px-1" style={{ color: 'rgba(60,60,67,0.45)' }}>
+            Past Assignments
+          </p>
+          <div className="bg-white rounded-2xl overflow-hidden" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04)' }}>
+            {pastAssignments.map((a, i) => {
+              const submitted  = submittedIds.has(a.id)
+              const sub        = submissionMap[a.id]
+              const isOverdue  = a.due_date < today && !submitted
+              const pct        = sub?.total ? Math.round((sub.score / sub.total) * 100) : null
+              const scoreColor = pct === null ? '#1B4FD8' : pct >= 70 ? '#1E8A3C' : pct >= 50 ? '#B86800' : '#C0281F'
+
               return (
-                <div key={a.id} className="flex items-center justify-between gap-3 p-4">
+                <div key={a.id} className="flex items-center justify-between gap-3 px-4 py-3"
+                  style={{ borderTop: i > 0 ? '1px solid rgba(60,60,67,0.07)' : undefined }}>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-[#1A2340]">{a.problem_ids?.length ?? 0} problems</p>
-                    <p className="text-xs text-[#6B7B9C] mt-0.5">{formatDate(a.due_date)}</p>
+                    <p className="text-[13px] font-semibold" style={{ color: '#1C1C1E' }}>
+                      {a.problem_ids?.length ?? 0} problems
+                    </p>
+                    <p className="text-[11px] mt-0.5" style={{ color: 'rgba(60,60,67,0.45)' }}>{formatDate(a.due_date)}</p>
                   </div>
                   <div className="text-right shrink-0">
                     {submitted ? (
                       <div>
-                        <span className="text-[10px] bg-[#ECFDF5] text-emerald-700 px-2 py-0.5 rounded-full font-semibold">✓ {sub?.score}/{sub?.total}</span>
+                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                          style={{ background: 'rgba(52,199,89,0.12)', color: '#1E8A3C' }}>
+                          ✓ {sub?.score}/{sub?.total}
+                        </span>
                         {pct !== null && (
-                          <p className="text-[10px] text-[#6B7B9C] mt-0.5">{pct}%</p>
+                          <p className="text-[10px] mt-0.5" style={{ color: scoreColor }}>{pct}%</p>
                         )}
                       </div>
                     ) : isOverdue ? (
                       <Link href={`/student/homework/${a.id}`}
-                        className="text-[10px] bg-[#FEF2F2] text-red-700 px-2 py-0.5 rounded-full font-semibold">
+                        className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                        style={{ background: 'rgba(255,59,48,0.10)', color: '#C0281F' }}>
                         Late – Submit
                       </Link>
                     ) : (
                       <Link href={`/student/homework/${a.id}`}
-                        className="text-[10px] bg-[#EEF3FF] text-[#1B4FD8] px-2 py-0.5 rounded-full font-semibold">
+                        className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                        style={{ background: 'rgba(27,79,216,0.10)', color: '#1B4FD8' }}>
                         Start →
                       </Link>
                     )}
@@ -152,10 +183,15 @@ export default async function StudentHomeworkPage() {
 
       {/* Empty state */}
       {!assignments?.length && (
-        <div className="bg-white rounded-2xl p-8 border border-[#E2E8F5] text-center">
-          <p className="text-4xl mb-3">📚</p>
-          <p className="text-[#1A2340] font-semibold mb-1">No homework yet</p>
-          <p className="text-[#6B7B9C] text-sm">Your teacher will assign problems here</p>
+        <div className="bg-white rounded-2xl py-14 text-center" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+          <div className="w-14 h-14 rounded-2xl mx-auto mb-3 flex items-center justify-center"
+            style={{ background: 'rgba(27,79,216,0.08)' }}>
+            <svg viewBox="0 0 24 24" fill="currentColor" className="w-7 h-7" style={{ color: '#1B4FD8' }}>
+              <path d="M11.25 4.533A9.707 9.707 0 006 3a9.735 9.735 0 00-3.25.555.75.75 0 00-.5.707v14.25a.75.75 0 001 .707A8.237 8.237 0 016 18.75c1.995 0 3.823.707 5.25 1.886V4.533zM12.75 20.636A8.214 8.214 0 0118 18.75c.966 0 1.89.166 2.75.47a.75.75 0 001-.708V4.262a.75.75 0 00-.5-.707A9.735 9.735 0 0018 3a9.707 9.707 0 00-5.25 1.533v16.103z" />
+            </svg>
+          </div>
+          <p className="text-[14px] font-semibold mb-0.5" style={{ color: '#1C1C1E' }}>No homework yet</p>
+          <p className="text-[12px]" style={{ color: 'rgba(60,60,67,0.45)' }}>Your teacher will assign problems here</p>
         </div>
       )}
     </div>
