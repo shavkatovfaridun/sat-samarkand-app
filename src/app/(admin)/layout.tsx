@@ -2,14 +2,16 @@ import Link from 'next/link'
 
 const nav = [
   { href: '/admin/dashboard',         label: 'Overview' },
+  { href: '/admin/schedule',           label: '📅 Schedule' },
   { href: '/admin/students',           label: 'Students' },
   { href: '/admin/groups',             label: 'Groups' },
+  { href: '/admin/rooms',              label: 'Rooms' },
   { href: '/admin/leads',              label: 'Leads' },
   { href: '/admin/finance',            label: 'Finance' },
   { href: '/admin/finance/pl',         label: 'P&L' },
   { href: '/admin/finance/expenses',   label: 'Expenses' },
   { href: '/admin/teachers',           label: 'Teachers' },
-  { href: '/admin/problems',            label: 'Problems' },
+  { href: '/admin/problems',           label: 'Problems' },
   { href: '/admin/vocab',              label: 'Vocab' },
   { href: '/admin/notifications',      label: 'Notify' },
 ]
